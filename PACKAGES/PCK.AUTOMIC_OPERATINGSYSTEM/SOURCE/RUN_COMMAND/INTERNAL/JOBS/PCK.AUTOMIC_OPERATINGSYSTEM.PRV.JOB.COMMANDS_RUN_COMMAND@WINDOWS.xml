@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>F</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>WINDOWS</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_OPERATINGSYSTEM.PRV.JOB.COMMANDS_RUN_COMMAND@WINDOWS</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>1878117714</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[$errors=0
+: INC PCK.ITPA_SHARED.PUB.INCLUDE.POWERSHELL_UTILITY
+: INC PCK.ITPA_SHARED.PRV.INCLUDE.LOGGING.HEADER.EXECUTION
+: INC PCK.AUTOMIC_OPERATINGSYSTEM.PRV.INCLUDE.RUN_COMMAND_LOGGING_PARAMS
+
+: SET &AGENT_TEMPDIR# = GET_VAR('UC_EX_PATH_TEMP', &AGENT#)
+: SET &RUNCMDDIR# = "runcmd_&$RUNID#"
+: SET &AGENT_TEMPDIR# = "&AGENT_TEMPDIR#&RUNCMDDIR#"
+
+: SET &UC4RB_FOLDER_TO_DEL# = &AGENT_TEMPDIR#
+: PUBLISH &UC4RB_FOLDER_TO_DEL#,,"TASK"
+
+! Assume target system is windows
+: SET &FILENAME# = "run_cmd.ps1"
+: SET &WIN_CMD# = "cmd /c '&UC4RB_AIOPS_COMMAND#'"
+
+: SET &UC4RB_FILE_CONTENT# = &WIN_CMD#
+: SET &UC4RB_FILE_PATH# = "&AGENT_TEMPDIR#\&FILENAME#"
+: INC PCK.AUTOMIC_OPERATINGSYSTEM.PUB.INCLUDE.WRITE_FILE
+
+! Assume target system is Unix
+: SET &UNXFILENAME# = "unix_cmd.txt"
+: SET &UC4RB_FILE_CONTENT# = &UC4RB_AIOPS_COMMAND#
+: SET &UC4RB_FILE_PATH# = "&AGENT_TEMPDIR#\&UNXFILENAME#"
+: INC PCK.AUTOMIC_OPERATINGSYSTEM.PUB.INCLUDE.WRITE_FILE
+
+: SWITCH &UC4RB_AIOPS_TOOLS#
+: CASE "WinRM"
+:    INC PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+     try {
+:       INC PCK.ITPA_SHARED.PUB.INCLUDE.WINRM_CREATE_PSSESSION
+:       SET &UC4RB_WINRM_SCRIPT_FILEPATH#=&AGENT_TEMPDIR#\&FILENAME#
+:       IF &UC4RB_AIOPS_TIMEOUT# NE 0
+           $UC4RB_WINRM_SCRIPT_TIMEOUT=&UC4RB_AIOPS_TIMEOUT#
+:       ENDIF
+:       INC PCK.ITPA_SHARED.PUB.INCLUDE.WINRM_RUN_PSSCRIPT
+     } catch {
+        $errors=1
+        $error.Exception
+     }finally {
+:       INC PCK.ITPA_SHARED.PUB.INCLUDE.WINRM_REMOVE_PSSESSION
+     }
+: CASE "SSH"
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH_SSH_RESOURCE
+:   SET &UC4RB_SSH_TIMEOUT#=&UC4RB_AIOPS_TIMEOUT#
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.SSH_PREPARE_ARGS
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.SSH_DETECT_OSNAME
+    if($UC4RB_SSH_OSNAME -eq "WINDOWS" ) {
+        $content='powershell .\&RUNCMDDIR#\&FILENAME#'
+        $cmdfile='&AGENT_TEMPDIR#\cmd.txt'
+        $null=new-item -Path $cmdfile -Value $content -force -itemtype file
+        $nl = [Environment]::NewLine
+        Add-Content -Path "&UC4RB_FILE_PATH#" -Value "$nl if(!`$?) {throw `"ERROR:unable to execute the specified command`"}"
+        Remove-Item -Path "&AGENT_TEMPDIR#\&UNXFILENAME#"
+        java -jar "&UC4RB_SSH_JARPATH#" -action RunScriptAction &UC4RB_SSH_WIN_ARGS# -cmdfile $cmdfile -sourcepath " &AGENT_TEMPDIR# "
+    } else {
+        java -jar "&UC4RB_SSH_JARPATH#" -action RunCommandAction &UC4RB_SSH_ARGS# -cmdfile "&AGENT_TEMPDIR#\&UNXFILENAME#"
+    }
+: CASE "Agent"
+!   This is for catching non-terminating error
+    $nl = [Environment]::NewLine
+    Add-Content -Path "&AGENT_TEMPDIR#\&FILENAME#" -Value "$nl if(!`$?) {throw `"ERROR:unable to execute the specified command`"}"
+    $execjob=start-job -ScriptBlock {
+       try {
+          $statusCode=0
+          & "&AGENT_TEMPDIR#\&FILENAME#" 2>&1
+          if( !$? ) {
+             $statusCode=1
+          }
+       } catch {
+           $statusCode=1
+           $error.Exception
+       }
+!      Making this job failed.
+       if ($statusCode -ne 0) {
+           throw "ERROR: Unable to execute command."
+       }
+    }
+    try {
+       if(!$execjob) {
+          throw "ERROR: Execution failed possibly due to system error."
+       }
+:      IF &UC4RB_AIOPS_TIMEOUT# EQ 0
+          $result=wait-job $execjob
+:      ELSE
+          $result=wait-job $execjob -timeout &UC4RB_AIOPS_TIMEOUT#
+:      ENDIF
+       $jobState=$execjob.state
+!      Stop the job.
+       $null=stop-job -job $execjob
+       write-output `n"******* Command execution output start here *******"
+!      Recieve output.
+       receive-job $execjob
+       write-output `n"******* Command execution output end here *******"
+!      Remove the job
+       $null=remove-job $execjob -force
+
+!      Result null means job is not completed with in provided timeframe.
+       if ($result -eq $null) {
+         throw "ERROR: Command Execution timeout occured."
+       }
+
+       if ($jobState -ne "Completed") {
+         throw "ERROR: Command Execution failed. Job status [$jobState]"
+       }
+    } catch {
+       $errors=1
+       $error.Exception
+    }
+: ENDSWITCH
+: INC PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_POWERSHELL_CMD@WINDOWS
+__uc_return($errors)]]></process>
+      </row>
+      <row>
+         <pre_process>:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.START_STOP_JOB_ACCORDING_TO_AGENT_OS</pre_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <platform>WINDOWS</platform>
+         <agent><![CDATA[<WIN>]]></agent>
+         <job_report_path>2</job_report_path>
+         <win_work_dir>c:\</win_work_dir>
+         <win_typ>2</win_typ>
+         <win_view>0</win_view>
+         <win_logon_as_batch>0</win_logon_as_batch>
+         <win_show_at_desktop>0</win_show_at_desktop>
+         <win_report_by_script>0</win_report_by_script>
+         <job_object></job_object>
+         <win_cmd></win_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

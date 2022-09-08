@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobi>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>PCK.AUTOMIC_JAVA.PUB.INCLUDE.PUBLISH_PROCESS_ID</name>
+         <type>JOBI</type>
+         <description>Publish Process Id</description>
+         <versioning_id>1442287716</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:SET &STATUS# = GET_UC_OBJECT_STATUS(,,"RETCODE")
+:SET &UC4RB_JVM_PROCESS_ID# = ""
+
+: IF &STATUS# EQ 0
+:  SET &HND#=PREP_PROCESS_REPORT("JOBS", , "REP", "UC4RB_JAVA*", "COL=DELIMITER", 'DELIMITER=*::=*')
+:  PROCESS &HND#
+:      SET &KEY# = GET_PROCESS_LINE(&HND#,1)
+:      SET &VALUE# = GET_PROCESS_LINE(&HND#,2)
+:      IF &KEY# = "UC4RB_JAVA_PROCESSID"
+:         SET &UC4RB_JVM_PROCESS_ID# = &VALUE#
+:      ENDIF
+:  ENDPROCESS
+:  CLOSE_PROCESS &HND#
+:  ENDIF
+:PUBLISH &UC4RB_JVM_PROCESS_ID#,,WORKFLOW
+]]></process>
+      </row>
+   </scripts>
+</jobi>

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>F</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>UNIX</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_OPERATINGSYSTEM.PRV.JOB.COMMANDS_RUN_SCRIPT@UNIX</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <description>Run Script</description>
+         <versioning_id>1167858595</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[: DEFINE &STRING_ARR#, string, 30
+: INC PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+: INC PCK.ITPA_SHARED.PUB.INCLUDE.SUDOERS_HEADER
+
+: INC PCK.ITPA_SHARED.PRV.INCLUDE.LOGGING.HEADER.EXECUTION
+: INC PCK.AUTOMIC_OPERATINGSYSTEM.PRV.INCLUDE.RUN_SCRIPT_LOGGING_PARAMS
+
+: INC PCK.ITPA_SHARED.PRV.INCLUDE.ESCAPE_CHARS@UNIX &UC4RB_ESCAPED_STRING# = &SCRIPTFILE#
+
+: SET &VALIDATE_SCRIPTPATH = "FALSE"
+: IF &UC4RB_AIOPS_TOOLS# EQ "Agent"
+:    IF &UC4RB_AIOPS_COMMAND_SCRIPT# EQ ""
+:       SET &VALIDATE_SCRIPTPATH = "TRUE"
+:    ENDIF
+: ELSE
+:    IF &UC4RB_AIOPS_SCRIPT_LOCAL# NE ""
+:       SET &VALIDATE_SCRIPTPATH = "TRUE"
+:    ENDIF
+: ENDIF
+
+: IF &VALIDATE_SCRIPTPATH EQ "TRUE"
+   if [ ! -f "&SCRIPTFILE#" ] ;
+    then
+       echo "ERROR: Unable to access provided script file"
+       exit 1
+   fi
+: ENDIF
+
+if [ ! -d "&AGENT_TEMPDIR#" ] ;
+then
+  mkdir "&AGENT_TEMPDIR#"
+  if [ "$?" -ne "0" ] ;
+  then
+     echo "ERROR: Unable to create agent temp directory [&AGENT_TEMPDIR#]"
+     exit 1
+  fi
+fi
+
+: SWITCH &UC4RB_AIOPS_TOOLS#
+: CASE "WinRM"
+:    STOP MSG, 50, "WinRM is only supported by Windows Platforms."
+: CASE "SSH"
+    cmdFile="&AGENT_TEMPDIR#/cmd_&$RUNID#.txt"
+    scrfile="&SCRIPTFILE#"
+    scrfilename=$(basename "$scrfile")
+:   IF &UC4RB_AIOPS_SCRIPT_LOCAL# NE ""
+	cp -f "$scrfile" "&AGENT_TEMPDIR#"
+:   ENDIF
+
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH_SSH_RESOURCE
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.SSH_PREPARE_ARGS
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.SSH_DETECT_OSNAME
+
+    if [ $UC4RB_SSH_OSNAME == "WINDOWS" ] ;
+    then
+:      IF &UC4RB_AIOPS_COMMAND_SCRIPT# NE ""
+          mv "$scrfile" "&AGENT_TEMPDIR#/commandscript_&$RUNID#.ps1"
+!         scrfile="&AGENT_TEMPDIR#/commandscript_&$RUNID#.ps1"
+          scrfilename="commandscript_&$RUNID#.ps1"
+:      ENDIF
+:      IF &ISREMOTE# = 0
+          scrfile=".\&$RUNID#\\$scrfilename"
+:      ENDIF
+:      SET &PSFILE#="tempscript_&$RUNID#.ps1"
+       tempfile="&AGENT_TEMPDIR#/&PSFILE#"
+       echo "& \"$scrfile\"" > "$tempfile"
+       echo "if(!\$?) { throw \"ERROR:unable to execute the specified script\" }" >> "$tempfile"
+       echo "powershell .\&$RUNID#\&PSFILE#" > "$cmdFile"
+       java -jar "&UC4RB_SSH_JARPATH#" -action RunScriptAction &UC4RB_SSH_WIN_ARGS# -cmdfile "$cmdFile" -sourcepath "&AGENT_TEMPDIR#"
+    else
+:      IF &ISREMOTE# = 0
+          scrfile="./&$RUNID#/$scrfilename"
+          echo "chmod +x \"$scrfile\";\"$scrfile\"" > "$cmdFile"
+          java -jar "&UC4RB_SSH_JARPATH#" -action RunScriptAction &UC4RB_SSH_ARGS# -cmdfile "$cmdFile" -sourcepath "&AGENT_TEMPDIR#"
+:      ELSE
+          echo "\"$scrfile\"" > "$cmdFile"
+          java -jar "&UC4RB_SSH_JARPATH#" -action RunCommandAction &UC4RB_SSH_ARGS# -cmdfile "$cmdFile"
+:      ENDIF
+    fi
+: CASE "Agent"
+:   IF &UC4RB_AIOPS_COMMAND_SCRIPT# NE ""
+       chmod +x "&SCRIPTFILE#"
+:   ENDIF
+    "&SCRIPTFILE#"
+: ENDSWITCH
+: INC PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_SHELL_CMD@UNIX
+: INC PCK.ITPA_SHARED.PUB.INCLUDE.SUDOERS_FOOTER]]></process>
+      </row>
+      <row>
+         <pre_process><![CDATA[:INC PCK.ITPA_SHARED.PUB.INCLUDE.START_STOP_JOB_ACCORDING_TO_AGENT_OS
+
+! Changing Agent Temp Directory to Agent Temp Directory
+: SET &AGENT_TEMPDIR# = GET_VAR('UC_EX_PATH_TEMP', &AGENT#)
+: SET &AGENT_TEMPDIR# = "&AGENT_TEMPDIR#&$RUNID#"
+
+: SET &UC4RB_FOLDER_TO_DEL# = &AGENT_TEMPDIR#
+: PUBLISH &UC4RB_FOLDER_TO_DEL#,,"TASK"
+
+: SET &ISREMOTE# = 0
+: IF &UC4RB_AIOPS_SCRIPT_REMOTE# NE ""
+:   SET &SCRIPTFILE# = &UC4RB_AIOPS_SCRIPT_REMOTE#
+:   SET &COUNT# = &COUNT#+1
+:   SET &ISREMOTE# = 1
+: ENDIF
+
+: IF &UC4RB_AIOPS_SCRIPT_LOCAL# NE ""
+:   SET &SCRIPTFILE# = &UC4RB_AIOPS_SCRIPT_LOCAL#
+:   SET &COUNT# = &COUNT#+1
+: ENDIF
+
+: IF &UC4RB_AIOPS_COMMAND_SCRIPT# NE ""
+:   SET &COUNT# = &COUNT#+1
+: ENDIF
+
+: IF &COUNT# NE "1"
+:   P "ERROR: Please provide either script or remote script file or local script file."
+:   P "ERROR: You have to provide exactly one of them."
+:   STOP MSG, 50, "Please provide valid input parameters."
+: ENDIF
+
+: IF &UC4RB_AIOPS_COMMAND_SCRIPT# NE ""
+:   SET &UC4RB_FILE_CONTENT# = '&UC4RB_AIOPS_COMMAND_SCRIPT#'
+:   SET &UC4RB_FILE_PATH# = "&AGENT_TEMPDIR#/temp_cmd.sh"
+:   INC PCK.AUTOMIC_OPERATINGSYSTEM.PUB.INCLUDE.WRITE_FILE
+:   SET &SCRIPTFILE# = &UC4RB_FILE_PATH#
+: ENDIF]]></pre_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <platform>UNIX</platform>
+         <agent><![CDATA[<UNIX>]]></agent>
+         <job_report_path>2</job_report_path>
+         <priority>0</priority>
+         <unix_shell>-bash</unix_shell>
+         <unix_shell_options></unix_shell_options>
+         <unix_type></unix_type>
+         <unix_cmd></unix_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

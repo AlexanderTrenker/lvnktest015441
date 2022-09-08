@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scri>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_OPERATINGSYSTEM.PUB.SCRIPT.POSTREBOOT_WIN</name>
+         <type>SCRI</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <description>Post reboot compute status and cleanup</description>
+         <versioning_id>-1526200527</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[: DELETE_VAR PCK.AUTOMIC_OPERATINGSYSTEM.PUB.VARA.STATUS_FLAG, "&$PROCESSOR_RUNID#"
+: IF &REBOOT_STATUS# = "FAIL"
+:   P "ERROR: Reboot Failed. For more information, please check the corresponding reboot job report."
+:   STOP MSG, 50, "ERROR: Reboot Failed."
+: ELSE
+:   P "INFO: Reboot command has been issued successfully."
+:   IF &UC4RB_AIOPS_FORCE# EQ "YES"
+:     IF &REBOOT_CMDFILE# <> ""
+:       PUT_PROMPT_BUFFER UC4RB_DIR_FILE_RM_NAME# =  &REBOOT_CMDFILE#
+:       PUT_PROMPT_BUFFER UC4RB_DIR_FILE_RM_FAIL# = "NO"
+:       PUT_PROMPT_BUFFER AGENT# = &AGENT#
+:       PUT_PROMPT_BUFFER LOGIN# = &LOGIN#
+:       SET &ACTOBJ# = ACTIVATE_UC_OBJECT("PCK.AUTOMIC_FILESYSTEM.PUB.ACTION.DELETE")
+:       IF &ACTOBJ# = "0"
+:         SET &ERRNR# = SYS_LAST_ERR_NR()
+:         SET &ERRINS#  = SYS_LAST_ERR_INS()
+:         SET &MESSAGE# = GET_MSG_TXT(&ERRNR#,&ERRINS#)
+:         PRINT "Error while activating object :&MESSAGE#"
+:       ELSE
+:         P "Attempting to delete the file &REBOOT_CMDFILE#. Job Run Id [&ACTOBJ#]"
+:       ENDIF
+:     ENDIF
+:   ENDIF
+:   IF &UC4RB_AIOPS_WAIT_FOR_COMPLETE# EQ "YES"
+:     IF "PASS" EQ &TGT_MACHINE_STATUS# OR &AGENT_STATUS#
+:       P "INFO: Machine has been restarted successfully."
+:     ELSE
+:       P "Agent Status [&AGENT_STATUS#], Target Machine Status [&TGT_MACHINE_STATUS#]"
+:       P "ERROR: Possibly machine may not be restarted within specified time limit."
+:       STOP MSG, 50, "ERROR: Machine could not be restarted within specified time limit."
+:     ENDIF
+:   ENDIF
+: ENDIF]]></process>
+      </row>
+   </scripts>
+   <script_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+      </row>
+   </script_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</scri>

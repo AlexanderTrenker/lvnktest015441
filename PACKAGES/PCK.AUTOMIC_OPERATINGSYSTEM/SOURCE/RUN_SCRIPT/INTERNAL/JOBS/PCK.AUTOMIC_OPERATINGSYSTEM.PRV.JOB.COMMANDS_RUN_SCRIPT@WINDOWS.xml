@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>F</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>WINDOWS</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_OPERATINGSYSTEM.PRV.JOB.COMMANDS_RUN_SCRIPT@WINDOWS</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <description>Run Script</description>
+         <versioning_id>-1281334648</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[$errors=0
+: INC PCK.ITPA_SHARED.PUB.INCLUDE.POWERSHELL_UTILITY
+: INC PCK.ITPA_SHARED.PRV.INCLUDE.LOGGING.HEADER.EXECUTION
+: INC PCK.AUTOMIC_OPERATINGSYSTEM.PRV.INCLUDE.RUN_SCRIPT_LOGGING_PARAMS
+
+: INC PCK.ITPA_SHARED.PRV.INCLUDE.ESCAPE_CHARS@POWERSHELL &UC4RB_ESCAPED_STRING# = &SCRIPTFILE#
+
+: SET &VALIDATE_SCRIPTPATH = "FALSE"
+: IF &UC4RB_AIOPS_TOOLS# EQ "Agent"
+:    IF &UC4RB_AIOPS_COMMAND_SCRIPT# EQ ""
+:       SET &VALIDATE_SCRIPTPATH = "TRUE"
+:    ENDIF
+: ELSE
+:    IF &UC4RB_AIOPS_SCRIPT_LOCAL# NE ""
+:       SET &VALIDATE_SCRIPTPATH = "TRUE"
+:    ENDIF
+: ENDIF
+
+: IF &VALIDATE_SCRIPTPATH EQ "TRUE"
+    if ( !(Test-Path "&SCRIPTFILE#" -pathtype Leaf) ) {
+       WRITE-HOST "ERROR: Unable to access the specified path [&SCRIPTFILE#]. Possibly it doesnot exist."
+       __uc_return(1)
+    }
+: ENDIF
+
+
+if ( !(Test-Path "&AGENT_TEMPDIR#" -pathtype Container) ) {
+   New-Item -Path "&AGENT_TEMPDIR#" -itemType directory
+   if (!$?) {
+      WRITE-HOST "ERROR: Unable to create agent temp directory[&AGENT_TEMPDIR#]"
+      __uc_return(1)
+   }
+}
+: SWITCH &UC4RB_AIOPS_TOOLS#
+: CASE "WinRM"
+:    INC PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+     try {
+:       INC PCK.ITPA_SHARED.PUB.INCLUDE.WINRM_CREATE_PSSESSION
+:       IF &ISREMOTE# = 1
+          $UC4RB_WINRM_CMDCONTENT="& `"&SCRIPTFILE#`""
+:         INC PCK.ITPA_SHARED.PUB.INCLUDE.WINRM_RUN_COMMAND
+:       ELSE
+           $inputfilename=Split-Path -Path "&SCRIPTFILE#" -Leaf
+:          IF &UC4RB_AIOPS_SCRIPT_LOCAL# NE ""
+             Copy-Item -Path "&SCRIPTFILE#" -Destination "&AGENT_TEMPDIR#"
+:          ENDIF
+:          SET &UC4RB_WINRM_SOURCEPATH#=&AGENT_TEMPDIR#
+:          INC PCK.ITPA_SHARED.PUB.INCLUDE.WINRM_COPY_PATH
+           try {
+              $UC4RB_WINRM_CMDCONTENT="& .\&$RUNID#\$inputfilename"
+:             INC PCK.ITPA_SHARED.PUB.INCLUDE.WINRM_RUN_COMMAND
+           } finally {
+:             INC PCK.ITPA_SHARED.PUB.INCLUDE.WINRM_REMOVE_PATH
+           }
+:       ENDIF
+     } catch {
+        $errors=1
+        $error.Exception
+     } finally {
+:       INC PCK.ITPA_SHARED.PUB.INCLUDE.WINRM_REMOVE_PSSESSION
+     }
+: CASE "SSH"
+    $cmdFile="&AGENT_TEMPDIR#\cmd_&$RUNID#.txt"
+    $scrfile="&SCRIPTFILE#"
+    $scrfilename=Split-Path -Path $scrfile -Leaf
+:   IF &UC4RB_AIOPS_SCRIPT_LOCAL# NE ""
+       Copy-Item -Path $scrfile -Destination "&AGENT_TEMPDIR#"
+:   ENDIF
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH_SSH_RESOURCE
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.SSH_PREPARE_ARGS
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.SSH_DETECT_OSNAME
+
+    if($UC4RB_SSH_OSNAME -eq "WINDOWS" ) {
+:      IF &ISREMOTE# = 0
+          $scrfile=".\&$RUNID#\$scrfilename"
+:      ENDIF
+:      SET &PSFILE#="tempscript_&$RUNID#.ps1"
+       $tempfile="&AGENT_TEMPDIR#\&PSFILE#"
+       $nl = [Environment]::NewLine
+       $content="$nl & `"$scrfile`" $nl if(!`$?) { throw `"ERROR:unable to execute the specified script`" } "
+       $null=new-item -Path $tempfile -Value $content -force -itemtype file
+       $content="powershell .\&$RUNID#\&PSFILE#"
+       $null=new-item -Path $cmdFile -Value $content -force -itemtype file
+       java -jar "&UC4RB_SSH_JARPATH#" -action RunScriptAction &UC4RB_SSH_WIN_ARGS# -cmdfile $cmdFile -sourcepath "&AGENT_TEMPDIR#"
+    } else {
+:      IF &UC4RB_AIOPS_COMMAND_SCRIPT# NE ""
+         rename-item $scrfile "&AGENT_TEMPDIR#\commandscript_&$RUNID#.sh"
+!        $scrfile = "&AGENT_TEMPDIR#\commandscript_&$RUNID#.sh"
+         $scrfilename="commandscript_&$RUNID#.sh"
+:      ENDIF
+:      IF &ISREMOTE# = 0
+          $scrfile="./&$RUNID#/$scrfilename"
+          $content="sed -i 's/\r`$//' `"$scrfile`";chmod +x `"$scrfile`";`"$scrfile`""
+          $null=new-item -Path $cmdFile -Value $content -force -itemtype file
+          java -jar "&UC4RB_SSH_JARPATH#" -action RunScriptAction &UC4RB_SSH_ARGS# -cmdfile $cmdFile -sourcepath "&AGENT_TEMPDIR#"
+:       ELSE
+          $content="`"$scrfile`""
+          $null=new-item -Path $cmdFile -Value $content -force -itemtype file
+          java -jar "&UC4RB_SSH_JARPATH#" -action RunCommandAction &UC4RB_SSH_ARGS# -cmdfile $cmdFile
+:      ENDIF
+    }
+: CASE "Agent"
+:   SET &NL# = UC_CRLF()
+:   SET &UC4RB_FILE_CONTENT# = '& "&SCRIPTFILE#" &NL# if(!$?) { throw "ERROR:unable to execute the specified script"}'
+:   SET &UC4RB_FILE_PATH# = "&AGENT_TEMPDIR#\tempscript_&$RUNID#.ps1"
+:   INC PCK.AUTOMIC_OPERATINGSYSTEM.PUB.INCLUDE.WRITE_FILE
+    try{
+      & "&UC4RB_FILE_PATH#"
+    } catch {
+      $errors=1
+      $error.Exception
+    }
+: ENDSWITCH
+: INC PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_POWERSHELL_CMD@WINDOWS
+__uc_return($errors)]]></process>
+      </row>
+      <row>
+         <pre_process><![CDATA[:INC PCK.ITPA_SHARED.PUB.INCLUDE.START_STOP_JOB_ACCORDING_TO_AGENT_OS
+
+! Changing Agent Temp Directory to Agent Temp Directory
+: SET &AGENT_TEMPDIR# = GET_VAR('UC_EX_PATH_TEMP', &AGENT#)
+: SET &AGENT_TEMPDIR# = "&AGENT_TEMPDIR#&$RUNID#"
+
+: SET &UC4RB_FOLDER_TO_DEL# = &AGENT_TEMPDIR#
+: PUBLISH &UC4RB_FOLDER_TO_DEL#,,"TASK"
+
+: SET &ISREMOTE# = 0
+: IF &UC4RB_AIOPS_SCRIPT_REMOTE# NE ""
+:   SET &SCRIPTFILE# = &UC4RB_AIOPS_SCRIPT_REMOTE#
+:   SET &COUNT# = &COUNT#+1
+:   SET &ISREMOTE# = 1
+: ENDIF
+
+: IF &UC4RB_AIOPS_SCRIPT_LOCAL# NE ""
+:   SET &SCRIPTFILE# = &UC4RB_AIOPS_SCRIPT_LOCAL#
+:   SET &COUNT# = &COUNT#+1
+: ENDIF
+
+: IF &UC4RB_AIOPS_COMMAND_SCRIPT# NE ""
+:   SET &COUNT# = &COUNT#+1
+: ENDIF
+
+: IF &COUNT# NE "1"
+:   P "ERROR: Please provide either script or remote script file or local script file."
+:   P "ERROR: You have to provide exactly one of them."
+:   STOP MSG, 50, "Please provide valid input parameters."
+: ENDIF
+
+: IF &UC4RB_AIOPS_COMMAND_SCRIPT# NE ""
+:   SET &UC4RB_FILE_CONTENT# = '&UC4RB_AIOPS_COMMAND_SCRIPT#'
+:   SET &UC4RB_FILE_PATH# = "&AGENT_TEMPDIR#\commandscript_&$RUNID#.ps1"
+:   INC PCK.AUTOMIC_OPERATINGSYSTEM.PUB.INCLUDE.WRITE_FILE
+:   SET &SCRIPTFILE# = &UC4RB_FILE_PATH#
+: ENDIF]]></pre_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <platform>WINDOWS</platform>
+         <agent><![CDATA[<WIN>]]></agent>
+         <job_report_path>2</job_report_path>
+         <win_work_dir>c:\</win_work_dir>
+         <win_typ>2</win_typ>
+         <win_view>0</win_view>
+         <win_logon_as_batch>0</win_logon_as_batch>
+         <win_show_at_desktop>0</win_show_at_desktop>
+         <win_report_by_script>0</win_report_by_script>
+         <job_object></job_object>
+         <win_cmd></win_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

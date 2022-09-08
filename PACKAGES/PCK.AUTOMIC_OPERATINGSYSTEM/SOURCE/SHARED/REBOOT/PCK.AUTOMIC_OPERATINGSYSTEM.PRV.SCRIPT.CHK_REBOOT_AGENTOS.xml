@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scri>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_OPERATINGSYSTEM.PRV.SCRIPT.CHK_REBOOT_AGENTOS</name>
+         <type>SCRI</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <description>Check agent OS reboot.</description>
+         <versioning_id>-1728821548</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[!  If force is not set, reboot should happen after 1 minute only.
+:  SET &AGENT_STATUS#=""
+:  IF &UC4RB_AIOPS_FORCE# EQ "NO"
+:    SET &ITERATION# = 1
+:    SET &RETRY_CNT# = 12
+:    WHILE &ITERATION# <> &RETRY_CNT#
+:      WAIT 5
+:      SET &ITERATION# = &ITERATION# + 1
+:      SET &CHECK_STATUS_FLG# = GET_VAR(PCK.AUTOMIC_OPERATINGSYSTEM.PUB.VARA.STATUS_FLAG, "&$PROCESSOR_RUNID#")
+:      IF &CHECK_STATUS_FLG# = "STOP"
+:        SET &AGENT_STATUS#="STOP"
+:        SET &ITERATION# = &RETRY_CNT#
+:      ENDIF
+:    ENDWHILE
+:  ENDIF
+
+: IF &AGENT_STATUS# EQ ""
+:  SET &FLAG# = "N"
+!  Retry with Count
+:  SET &LOOP_COUNT# = 1
+:  SET &RETRY_CNT#=&RETRY_COUNT# + 1
+:  WHILE &LOOP_COUNT# <> &RETRY_CNT#
+:    SET &STATUS# = SYS_HOST_ALIVE(&AGENT#)
+:    P "Retry Count [&LOOP_COUNT#] Agent Status [&STATUS#]"
+:    SET &LOOP_COUNT#=&LOOP_COUNT#+1
+:    IF &STATUS# = &FLAG#
+:      IF &FLAG# = "Y"
+:        SET &AGENT_STATUS#="PASS"
+:        SET &LOOP_COUNT# = &RETRY_CNT#
+:      ELSE
+:        P "Agent is down."
+:        SET &FLAG# = "Y"
+:      ENDIF
+:    ELSE
+:      IF &LOOP_COUNT# = &RETRY_CNT#
+:        SET &AGENT_STATUS#="TIMEOUT"
+:      ELSE
+:        SET &CHECK_STATUS_FLG# = GET_VAR(PCK.AUTOMIC_OPERATINGSYSTEM.PUB.VARA.STATUS_FLAG, "&$PROCESSOR_RUNID#")
+:        IF &CHECK_STATUS_FLG# = "STOP"
+:           SET &AGENT_STATUS#="STOP"
+:           SET &LOOP_COUNT# = &RETRY_CNT#
+:        ELSE
+:           WAIT &RETRY_INTERVAL#
+:        ENDIF
+:      ENDIF
+:    ENDIF
+:  ENDWHILE
+: ENDIF
+: P "Final Status [&AGENT_STATUS#]"
+: PUBLISH &AGENT_STATUS#,,WORKFLOW]]></process>
+      </row>
+   </scripts>
+   <script_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+      </row>
+   </script_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</scri>

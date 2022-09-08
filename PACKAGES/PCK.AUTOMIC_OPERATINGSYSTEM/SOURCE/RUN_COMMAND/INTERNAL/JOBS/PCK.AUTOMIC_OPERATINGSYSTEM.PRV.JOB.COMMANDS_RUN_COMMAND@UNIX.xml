@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>F</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>UNIX</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_OPERATINGSYSTEM.PRV.JOB.COMMANDS_RUN_COMMAND@UNIX</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>-244468455</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[: DEFINE &STRING_ARR#, string, 30
+: INC PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+: INC PCK.ITPA_SHARED.PUB.INCLUDE.SUDOERS_HEADER
+: INC PCK.ITPA_SHARED.PRV.INCLUDE.LOGGING.HEADER.EXECUTION
+: INC PCK.AUTOMIC_OPERATINGSYSTEM.PRV.INCLUDE.RUN_COMMAND_LOGGING_PARAMS
+
+: SET &AGENT_TEMPDIR# = GET_VAR('UC_EX_PATH_TEMP', &AGENT#)
+: SET &RUNCMDDIR# = "runcmd_&$RUNID#"
+: SET &AGENT_TEMPDIR# = "&AGENT_TEMPDIR#&RUNCMDDIR#"
+: SET &UC4RB_FOLDER_TO_DEL# = &AGENT_TEMPDIR#
+: PUBLISH &UC4RB_FOLDER_TO_DEL#,,"TASK"
+
+! Assume target system is Unix
+: SET &FILENAME# = "run_cmd.sh"
+: SET &UC4RB_FILE_CONTENT# = &UC4RB_AIOPS_COMMAND#
+: SET &UC4RB_FILE_PATH# = "&AGENT_TEMPDIR#/&FILENAME#"
+: INC PCK.AUTOMIC_OPERATINGSYSTEM.PUB.INCLUDE.WRITE_FILE
+
+
+: SWITCH &UC4RB_AIOPS_TOOLS#
+: CASE "WinRM"
+:    STOP MSG, 50, "WinRM is only supported by Windows Platforms."
+: CASE "SSH"
+!   target system can be windows as well
+:   SET &PSFILENAME# = "run_cmd.ps1"
+:   SET &WIN_CMD# = "cmd /c '&UC4RB_AIOPS_COMMAND#'"
+:   SET &UC4RB_FILE_CONTENT# = &WIN_CMD#
+:   SET &PSFILEPATH# = "&AGENT_TEMPDIR#/&PSFILENAME#"
+:   SET &NL# = UC_CRLF()
+:   SET &UC4RB_FILE_CONTENT# = STR_CAT(&UC4RB_FILE_CONTENT#, '&NL# if(!$?) {throw "ERROR:unable to execute the specified command"}')
+:   INC PCK.AUTOMIC_OPERATINGSYSTEM.PUB.INCLUDE.WRITE_FILE &UC4RB_FILE_PATH# = &PSFILEPATH#
+
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH_SSH_RESOURCE
+:   SET &UC4RB_SSH_TIMEOUT#=&UC4RB_AIOPS_TIMEOUT#
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.SSH_PREPARE_ARGS
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.SSH_DETECT_OSNAME
+    if [ "$UC4RB_SSH_OSNAME" == "WINDOWS" ] ;
+    then
+        content='powershell .\&RUNCMDDIR#\&PSFILENAME#'
+        cmdfile='&AGENT_TEMPDIR#/cmd.txt'
+        echo $content >> "$cmdfile"
+        java -jar "&UC4RB_SSH_JARPATH#" -action RunScriptAction &UC4RB_SSH_WIN_ARGS# -cmdfile "$cmdfile" -sourcepath " &AGENT_TEMPDIR# "
+    else
+        rm "&AGENT_TEMPDIR#/&PSFILENAME#"
+        java -jar "&UC4RB_SSH_JARPATH#" -action RunCommandAction &UC4RB_SSH_ARGS# -cmdfile "&UC4RB_FILE_PATH#"
+    fi
+: CASE "Agent"
+:      IF &UC4RB_AIOPS_TIMEOUT# EQ 0
+          bash "&UC4RB_FILE_PATH#"
+:      ELSE
+          timeout --preserve-status &UC4RB_AIOPS_TIMEOUT# bash "&UC4RB_FILE_PATH#"
+:      ENDIF
+       execcode=$?
+       if [ "$execcode" -eq "124" ] ;
+          then
+             echo "ERROR: Possibly execution timeout occured."
+       fi
+       exit $execcode
+: ENDSWITCH
+: INC PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_SHELL_CMD@UNIX
+: INC PCK.ITPA_SHARED.PUB.INCLUDE.SUDOERS_FOOTER]]></process>
+      </row>
+      <row>
+         <pre_process>:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.START_STOP_JOB_ACCORDING_TO_AGENT_OS</pre_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <platform>UNIX</platform>
+         <agent><![CDATA[<UNIX>]]></agent>
+         <job_report_path>2</job_report_path>
+         <priority>0</priority>
+         <unix_shell>-bash</unix_shell>
+         <unix_shell_options></unix_shell_options>
+         <unix_type></unix_type>
+         <unix_cmd></unix_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobp>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>F</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <child_queue>*OWN</child_queue>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <workflow_children>3</workflow_children>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_SERVICENOW.PUB.ACTION.UPDATE_INCIDENT_STATE</name>
+         <has_prompts>1</has_prompts>
+         <type>JOBP</type>
+         <has_object_variables>1</has_object_variables>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <description>Update Incident State</description>
+         <versioning_id>814439675</versioning_id>
+      </row>
+   </general_attributes>
+   <documentation>
+      <row>
+         <Docu><![CDATA[= Action name =
+PCK.AUTOMIC_SERVICENOW.PUB.ACTION.UPDATE_INCIDENT_STATE
+
+= General description =
+This action updates the state of an incident in ServiceNow.
+
+= Reference link =
+https://docs.servicenow.com/bundle/orlando-application-development/page/integrate/inbound-rest/concept/c_TableAPI.html#r_TableAPI-PUT
+
+= Inputs =
+* System ID*   : Provide Incident System ID to update its state. E.g. cf1747d10fc3ab002cc2cd8ce1050e8d
+* State        : The state to be set for the specified incident. Required if 'Custom State' is not provided. E.g. New, Pending
+* Custom State : The custom state to be set for the specified incident. Required if 'State' is not provided. E.g. Deploy, Pre-Deployment
+
+= Failure Conditions =
+If invalid or non-existing value for System ID or State is provided to update incident state, action will fail.
+
+=Return Value=
+* &UC4RB_SN_STATE_VAL#     : Value of the State
+* &UC4RB_SN_STATE_DIS_VAL# : Display value of the State
+
+= Outputs =
+- Return code is 0 in case of success.
+- Return code is non-zero in case of failure.
+
+= Rollback =
+(none)
+
+= Example =
+Updating incident state value to a Fixed State
+* System ID*   : cf1747d10fc3ab002cc2cd8ce1050e8d
+* State        : In Progress
+
+Updating incident state value to a Custom State
+* System ID*   : cf1747d10fc3ab002cc2cd8ce1050e8d
+* Custom State : Deploy]]></Docu>
+      </row>
+   </documentation>
+   <scripts>
+      <row>
+         <process><![CDATA[: SET &COUNT# = 0
+:IF &UC4RB_SN_INC_STATE# NE ""
+:  SET &COUNT# = &COUNT# + 1
+!Publishing state value
+:  SET &ATTRIBUTE_VARA#="PCK.AUTOMIC_SERVICENOW.PRV.VARA.INCIDENT_STATE_TYPE"
+:  SET &UC4RB_STATE_ATTRIBUTE#="&UC4RB_SN_INC_STATE#"
+:  INC PCK.AUTOMIC_SERVICENOW.PUB.INCLUDE.SET_VARA_VALUE
+:  SET &UC4RB_SN_STATE#=&ATTRIBUTE#
+:ENDIF
+
+:IF &UC4RB_SN_CUST_STATE# NE ""
+:  SET &COUNT# = &COUNT# + 1
+:  SET &UC4RB_SN_STATE#=&UC4RB_SN_CUST_STATE#
+:  ENDIF
+
+: IF &COUNT# <> 1
+:    STOP MSG, 50, "Either State or Custom State should be provided"
+: ENDIF
+
+:SET &UC4RB_SN_TABLE_NAME#="incident"
+
+
+
+]]></process>
+      </row>
+   </scripts>
+   <object_variables>
+      <row>
+         <name>&amp;UC4RB_SN_STATE#</name>
+      </row>
+      <row>
+         <name>&amp;UC4RB_SN_TABLE_NAME#</name>
+      </row>
+   </object_variables>
+   <workflow_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <reuse_agent_group>1</reuse_agent_group>
+      </row>
+   </workflow_attributes>
+   <workflow_definitions>
+      <row>
+         <active>1</active>
+         <childflags>0000000000000000</childflags>
+         <column>1</column>
+         <line_number>1</line_number>
+         <mrt_time>000000</mrt_time>
+         <object_name>START</object_name>
+         <object_type><![CDATA[<START>]]></object_type>
+         <row>1</row>
+         <precondition_error_action>S</precondition_error_action>
+      </row>
+      <row>
+         <active>1</active>
+         <alias>UPDATE_STATE</alias>
+         <childflags>0000000000000000</childflags>
+         <column>2</column>
+         <line_number>2</line_number>
+         <mrt_time>000000</mrt_time>
+         <object_name>PCK.AUTOMIC_SERVICENOW.PUB.JOBS.UPDATE_STATE</object_name>
+         <object_type>JOBS</object_type>
+         <predecessors>1</predecessors>
+         <rollback_enabled>1</rollback_enabled>
+         <row>1</row>
+         <precondition_error_action>A</precondition_error_action>
+      </row>
+      <row>
+         <active>1</active>
+         <childflags>0000000000000000</childflags>
+         <column>3</column>
+         <line_number>3</line_number>
+         <mrt_time>000000</mrt_time>
+         <object_name>END</object_name>
+         <object_type><![CDATA[<END>]]></object_type>
+         <predecessors>1</predecessors>
+         <row>1</row>
+         <precondition_error_action>A</precondition_error_action>
+      </row>
+   </workflow_definitions>
+   <line_conditions>
+      <row>
+         <workflow_line_number>2</workflow_line_number>
+         <line_number>1</line_number>
+         <predecessor_line_number>1</predecessor_line_number>
+         <ok_status>ANY_OK</ok_status>
+      </row>
+      <row>
+         <workflow_line_number>3</workflow_line_number>
+         <line_number>1</line_number>
+         <predecessor_line_number>2</predecessor_line_number>
+         <ok_status>ANY_OK</ok_status>
+      </row>
+   </line_conditions>
+   <prompt_set_list>
+      <row>
+         <line_number>1</line_number>
+         <prompt_set>PCK.AUTOMIC_SERVICENOW.PUB.PROMPTSET.CONNECTION_DETAILS</prompt_set>
+         <display_order>1</display_order>
+      </row>
+      <row>
+         <line_number>2</line_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <display_order>2</display_order>
+      </row>
+      <row>
+         <line_number>3</line_number>
+         <prompt_set>PCK.AUTOMIC_SERVICENOW.PRV.PROMPTSET.UPDATE_INCIDENT_STATE</prompt_set>
+         <display_order>3</display_order>
+      </row>
+      <row>
+         <line_number>4</line_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <display_order>4</display_order>
+      </row>
+      <row>
+         <line_number>5</line_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_ADVANCED</prompt_set>
+         <display_order>5</display_order>
+      </row>
+      <row>
+         <line_number>6</line_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.OVERWRITE_RA_AGENT</prompt_set>
+         <display_order>6</display_order>
+      </row>
+   </prompt_set_list>
+   <prompt_set_defaults>
+      <row>
+         <prompt_set_element_number>1</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_SERVICENOW.PUB.PROMPTSET.CONNECTION_DETAILS</prompt_set>
+         <variable_name>UC4RB_SN_REST_END_POINT#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>2</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <variable_name>CONN_AUTH_BASIC_HOST#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>2</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <value>--10</value>
+         <variable_name>CONN_AUTH_BASIC_PASSWORD#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>2</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <value>0</value>
+         <variable_name>CONN_AUTH_BASIC_PORT#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>2</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <value>YES</value>
+         <variable_name>CONN_AUTH_BASIC_PREEMPTIVE#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>2</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <variable_name>CONN_AUTH_BASIC_REALM#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>2</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <variable_name>CONN_AUTH_BASIC_USERNAME#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>3</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_SERVICENOW.PRV.PROMPTSET.UPDATE_INCIDENT_STATE</prompt_set>
+         <variable_name>UC4RB_SN_INC_STATE#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>3</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_SERVICENOW.PRV.PROMPTSET.UPDATE_INCIDENT_STATE</prompt_set>
+         <variable_name>UC4RB_SN_SYS_ID#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <value>None</value>
+         <variable_name>CONN_PROXY_AUTH_METHOD#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <variable_name>CONN_PROXY_HOST#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <value>--10</value>
+         <variable_name>CONN_PROXY_PASSWORD#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <value>0</value>
+         <variable_name>CONN_PROXY_PORT#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <variable_name>CONN_PROXY_REALM#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <value>None</value>
+         <variable_name>CONN_PROXY_TYPE#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <variable_name>CONN_PROXY_USERNAME#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>5</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_ADVANCED</prompt_set>
+         <value>30</value>
+         <variable_name>CONN_CONNECTION_TIMEOUT#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>5</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_ADVANCED</prompt_set>
+         <value>NO</value>
+         <variable_name>CONN_FOLLOW_REDIRECTS#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>5</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_ADVANCED</prompt_set>
+         <value>60</value>
+         <variable_name>CONN_READ_TIMEOUT#</variable_name>
+      </row>
+      <row>
+         <alternative_view>1</alternative_view>
+         <prompt_set_element_number>6</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.OVERWRITE_RA_AGENT</prompt_set>
+         <value>&amp;OVERWRITE_RA_AGENT_PROMPT#</value>
+         <variable_name>OVERWRITE_RA_AGENT_PROMPT#</variable_name>
+      </row>
+   </prompt_set_defaults>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobp>

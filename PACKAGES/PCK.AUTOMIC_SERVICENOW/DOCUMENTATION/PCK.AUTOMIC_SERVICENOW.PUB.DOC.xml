@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<docu>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>PCK.AUTOMIC_SERVICENOW.PUB.DOC</name>
+         <type>DOCU</type>
+         <description>Package Documentation</description>
+         <versioning_id>-1400593955</versioning_id>
+      </row>
+   </general_attributes>
+   <documentation>
+      <row>
+         <Docu><![CDATA[About the Package
+================================
+ServiceNow is a software platform that supports IT service management and automates common business processes. It contains a number of modular applications that can
+vary by instance and user. It is an integrated cloud solution that combines five major services in a single system of record. It offers ranges of products which
+are designed as per the user's needs like Incident Management, Problem Management, Change Management, Request Management, Knowledge Management, Service Catalog and
+Configuration Management
+
+
+=Setup=
+* The Agent should be able to access ServiceNow rest API endpoint URL in order to make HTTP requests.
+* Action supports REST Web-Service Agent.
+
+
+=Common Inputs=
+- Endpoint URL*: Provide the URL of ServiceNow REST API Endpoint. E.g. http://localhost:9000
+- Username*: Provide the username for the REST API authentication. E.g. admin
+- Password*: Provide the password for the REST API authentication.
+
+=Actions=
+Following actions are supported
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.GET_INCIDENT
+* Action Description: This action fetches the details of an incident based on the provided system id.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.CREATE_INCIDENT
+* Action Description: This action creates an incident in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.UPDATE_INCIDENT_STATE
+* Action Description: This action updates an incident State in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.GET_CHANGE_REQUEST
+* Action Description: This action fetches Change Request details from ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.UPDATE_CHANGE_REQUEST_STATE
+* Action Description: This action updates Change Request State in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.CREATE_CHANGE_REQUEST
+* Action Description: This action creates Change Request in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.GET_CR_APPROVAL_STATUS
+* Action Description: This action fetches approval status of Change Request from ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.SET_VALUE
+* Action Description: This action updates values of the specific fields in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.CREATE_RECORD
+* Action Description: This action creates a new record in ServiceNow for the given table name
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.CREATE_TASK
+* Action Description: This action creates a new Change task in ServiceNow for a given change request
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.GET_RECORD
+* Action Description: This action gets a record from the specified Table in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.GET_RECORD_FIELD
+* Action Description: This action gets field value of the specified Table in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.GET_TASK
+* Action Description: This action gets a cahnge task from ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.ADD_COMMENT
+* Action Description: This action add Comment to any record in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.UPDATE_TASK_STATE
+* Action Description: This action updates the values of the state of a change task in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.ATTACH_FILE_TO_TASK
+* Action Description: This action add an attachment to the specified change task in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.ATTACH_FILE_TO_INCIDENT
+* Action Description: This action add an attachment to the specified incident in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.ATTACH_FILE_TO_CHANGE_REQUEST
+* Action Description: This action add an attachment to the specified change request in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.ASSIGN_INCIDENT
+* Action Description: This action allows to assign a user to a specified Incident so that the assigned user can work on that Incident.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.ASSIGN_CHANGE_REQUEST
+* Action Description: This action allows to assign a user to a specified Change Request so that the assigned user can work on that Change Request.
+ 
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.ASSIGN_TASK
+* Action Description: This action allows to assign a user to a specified Task so that the assigned user can work on that Task.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.ADD_CI_RELATION
+* Action Description: This action add CI relation to an existing Configuration Item(CI) in CMDB in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.CREATE_CI
+* Action Description: This action creates Configuration Item in CMDB in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.UPDATE_CI
+* Action Description: This action updates the existing Configuration Item in CMDB in ServiceNow. But it will not update the associated relations.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.LIST_CI_RELATIONS
+* Action Description: This action lists CI relations to an existing Configuration Item(CI) in CMDB in ServiceNow.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.ADD_ATTACHMENT
+* Action Description: This action adds an attachment to any record in ServiceNow. The attachment could be any file that ServiceNow supports for upload in it.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.CHECK_FIELD_VALUE
+* Action Description: This action checks if given field and value exist in the given table or not.
+
+* Action name: PCK.AUTOMIC_SERVICENOW.PUB.ACTION.GET_SYSTEM_ID
+* Action Description: This action fetches System Id  from Service Now of given record.
+
+]]></Docu>
+      </row>
+   </documentation>
+</docu>

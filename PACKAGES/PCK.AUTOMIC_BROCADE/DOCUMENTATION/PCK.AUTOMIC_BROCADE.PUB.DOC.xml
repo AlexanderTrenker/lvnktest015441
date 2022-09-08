@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<docu>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>PCK.AUTOMIC_BROCADE.PUB.DOC</name>
+         <type>DOCU</type>
+         <description>Pack Documentation</description>
+         <versioning_id>649235642</versioning_id>
+      </row>
+   </general_attributes>
+   <documentation>
+      <row>
+         <Docu><![CDATA[About Brocade
+================================
+Brocade G610 and G620 Switches are designed to meet the demands of hyper-scale virtualization, large cloud infrastructures, and
+growing flash-based storage environments by delivering market-leading Gen 6 Fibre Channel technology.
+
+About Automic's Brocade Package
+================================
+Automate the usage of Brocade switch through various actions. These actions are basic building blocks to achieve a specific business goal.
+
+=Limitations=
+* No known limitations.
+
+=Actions=
+Following actions are supported for Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.GET_PORT_STATE
+* Action Description: This action check current state of the given fibre channel port on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.ENABLE_PORT
+* Action Description: This action enables Given Fibre Channel port on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.FIBRE_DISABLE_PORT
+* Action Description: This action disable given Fiber channel port on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.GET_LOGICAL_SWITCHES
+* Action Description: This action is to get details of Logical Switches on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.ADD_PORT_TO_LOGICAL_SWITCH
+* Action Description: This action is to add Port to Logical Switch on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.CREATE_LOGICAL_SWITCH
+* Action Description: This action is to Create Logical Switch on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.DELETE_LOGICAL_SWITCH
+* Action Description: This action is to Delete Logical Switch on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.REMOVE_PORT_FROM_LOGICAL_SWITCH
+* Action Description: This action is to Remove Port from Logical Switch on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.GET_PORT_ATTRIBUTE
+* Action Description: This Action will be used to examine any attribute of the given fibre channel port on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.SET_PORT_ATTRIBUTE
+* Action Description: This Action will set port attribute so that it can define value of the any port attribute on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.LIST_FIBRE_CHANNEL_RESOURCES
+* Action Description: This Action will List Fibre Channel Resources on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.GET_FABRIC_SWITCH_DETAILS
+* Action Description: This Action will Get Fabric Switch Details on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.GET_FIBRE_CHANNEL_SWITCH
+* Action Description: This Action will Get Fibre Channel Switch details on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.GET_ACCESS_GATEWAY_MODE
+* Action Description: This action fetch access gateway value of given switch channel interface on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.GET_PORT_GROUPS
+* Action Description: This action is to get details of Access Gateway Port Groups on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.EDIT_PORT_GROUP
+* Action Description: This action is to Edit Port Group to change Port Group properties.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.ADD_PORT_TO_PORT_GROUP
+* Action Description: This action is to add N_Ports and F_Ports to the Port Group.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.ADD_PORT_MAPPING
+* Action Description: This action is to add Port to mapping.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.DELETE_PORT_MAPPING
+* Action Description: This action is to remove given F_Port to N_Port mappings.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.REMOVE_PORT_FROM_PORT_GROUP
+* Action Description: This action is to remove ports from Port Group.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.DELETE_PORT_GROUP
+* Action Description: This action is to delete Port Group.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.GET_N_PORTS_AND_F_PORTS
+* Action Description: This action fetch n_ports and f_ports on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.CREATE_PORT_GROUP
+* Action Description: This action is to create Port Group.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.EDIT_N_PORT
+* Action Description: This action is to update any properties of the N_Port.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.START_DIAGNOSTIC_PORT_TESTING
+* Action Description: This Action will Start Diagnostic Port Testing.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.STOP_DIAGNOSTIC_PORT_TESTING
+* Action Description: This action is to stop the diagnostic port on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.GET_DIAGNOSTIC_PORT_TEST_STATUS
+* Action Description: This action is to get details of Diagnostic Port on Brocade.
+
+* Action Name: PCK.AUTOMIC_BROCADE.PUB.ACTION.GET_DIAGNOSTIC_PORT_DETAILS
+* Action Description: This action is to get details of Diagnostic Port Details on Brocade.
+]]></Docu>
+      </row>
+   </documentation>
+</docu>

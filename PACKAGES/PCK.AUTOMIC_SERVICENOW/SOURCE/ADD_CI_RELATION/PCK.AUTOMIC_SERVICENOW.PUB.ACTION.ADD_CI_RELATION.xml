@@ -1,0 +1,601 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>F</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>CIT</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>2</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_SERVICENOW.PUB.ACTION.ADD_CI_RELATION</name>
+         <has_prompts>1</has_prompts>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <description>Add CI Relation</description>
+         <versioning_id>2041636539</versioning_id>
+      </row>
+   </general_attributes>
+   <documentation>
+      <row>
+         <Docu><![CDATA[= Action name =
+PCK.AUTOMIC_SERVICENOW.PUB.ACTION.ADD_CI_RELATION
+
+= General description =
+This action add CI relation to an existing Configuration Item(CI) in CMDB in ServiceNow.
+
+= API Reference =
+https://docs.servicenow.com/bundle/orlando-application-development/page/integrate/inbound-rest/concept/cmdb-instance-api.html#cmdb-instance-POST-cls-sys-relation
+
+= Inputs =
+* Class Name*        : Provide CMDB class name to add a relation. E.g. cmdb_ci_linux_server
+* System ID*         : Provide system id of the configuration item to add a relation. E.g. 8664c4d00fe4bf402cc2cd8ce1050e0d 
+* Inbound Relations  : Provide details of the inbound relations such as type and target in correct JSON format. E.g. {"type":"1a9cb166f1571100a92eb60da2bce5c5", "target":"9fd205d80f68bf402cc2cd8ce1050e11"}
+* Outbound Relations : Provide details of the Outbound relations such as type and target in correct JSON format. E.g {"type":"1a9cb166f1571100a92eb60da2bce5c5", "target":"9fd205d80f68bf402cc2cd8ce1050e44"}
+
+= Note =
+At least one of the relations (inbound/outbound) must be provided.
+Inbound relations are the ones where current CI appears as the child in the relationship. 
+Outbound relations are the ones where current CI appears as the parent in the relationship.
+
+= Failure Conditions =
+* If Class Name or System ID is invalid.
+* If Inbound/Outbound relation details are invalid.
+
+= Behavior = 
+* If invalid values provided to the input fields, action will fail.
+ 
+= Return Value =
+(none)
+
+= Outputs =
+* Return code is 0 in case of success.
+* Return code is non-zero in case of failure.
+
+= Rollback =
+(none)
+
+= Logging =
+Logs will be displayed in the AE report.
+
+= Example =
+Class Name        : cmdb_ci_linux_server
+System ID         : 8664c4d00fe4bf402cc2cd8ce1050e0d
+Inbound Relations : {
+                      "type": "5f985e0ec0a8010e00a9714f2a172815",
+                      "target": "2216daf0d7820200c1ed0fbc5e6103ca"
+                    }  
+Outbound Relations: {
+                       "type": "5f985e0ec0a8010e00a9714f2a172815",
+                       "target": "2216daf0d7820211c1ed0fbc5e610fdg"
+                     }
+   
+]]></Docu>
+      </row>
+   </documentation>
+   <scripts>
+      <row>
+         <process><![CDATA[:INC PCK.AUTOMIC_SERVICENOW.PUB.INCLUDE.API_VERSION
+! Conditional checks for validating that atleast one of relation(inbound/outbound) must be provided
+:  IF &UC4RB_SN_CMDB_INBOUND_REL# EQ ""
+:     IF &UC4RB_SN_CMDB_OUTBOUND_REL# EQ ""
+:   STOP MSG, 50, "Please provide atleast one of relation(inbound/outbound) to add."
+: ENDIF
+: ENDIF
+
+]]></process>
+      </row>
+      <row>
+         <pre_process><![CDATA[:INC PCK.AUTOMIC_RA_REST.PUB.INCLUDE.PREPARE_RA_JOB
+:SET &CONN_ENDPOINT_URL# = &UC4RB_SN_REST_END_POINT#
+:INC PCK.AUTOMIC_RA_REST.PUB.INCLUDE.SET_CONNECTION_AUTH_BASIC]]></pre_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <platform>CIT</platform>
+         <agent><![CDATA[<CIT>]]></agent>
+         <type>WEBSERVICEREST</type>
+         <optional_reports>PLOG</optional_reports>
+         <job_report_path>2</job_report_path>
+         <sub_type>REST</sub_type>
+      </row>
+   </job_attributes>
+   <extended_values>
+      <row>
+         <type>2</type>
+         <name>componentName</name>
+         <value>WebServiceRest</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>runType</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_aws_accesskey</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_aws_secret_accesskey</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_aws_sign_version</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_basic_host</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_basic_password</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_basic_port</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_basic_preemptive</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_basic_realm</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_basic_username</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_method</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_oauth_clientkey</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_oauth_clientsecret</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_oauth_refresh_token</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_oauth_refresh_uri</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_oauth_signature_type</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_oauth_token</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_oauth_token_secret</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_oauth_verifier</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_auth_oauth_version_method</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_connection_timeout</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_endpoint_url</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_follow_redirects</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_from_prompts</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_proxy_auth_method</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_proxy_host</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_proxy_password</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_proxy_port</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_proxy_realm</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_proxy_type</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_proxy_username</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>conn_read_timeout</name>
+         <value>REST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>connectTimeout</name>
+         <value>30</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>curl</name>
+         <value>30</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>file</name>
+         <value>30</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>isCurl</name>
+         <value>false</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>jobHeaders</name>
+         <value>false</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>jobQuery</name>
+         <value>false</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>mediaType</name>
+         <value>application/json</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>method</name>
+         <value>POST</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>multiPart</name>
+         <value>false</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>multiPartResp</name>
+         <value>false</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>partName</name>
+         <value>Part 1</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>request_part_0_mediaType</name>
+         <value>application/json</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>request_part_0_partName</name>
+         <value>Part 1</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>request_part_0_requestDataSource</name>
+         <value>text</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>request_part_0_requestTab_data_1</name>
+         <value>A{</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>request_part_0_requestTab_data_2</name>
+         <value>A"inbound_relations": [</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>request_part_0_requestTab_data_3</name>
+         <value>A&amp;UC4RB_SN_CMDB_INBOUND_REL#</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>request_part_0_requestTab_data_4</name>
+         <value>A],</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>request_part_0_requestTab_data_5</name>
+         <value>A"outbound_relations":[</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>request_part_0_requestTab_data_6</name>
+         <value>A&amp;UC4RB_SN_CMDB_OUTBOUND_REL#</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>request_part_0_requestTab_data_7</name>
+         <value>A]</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>request_part_0_requestTab_data_8</name>
+         <value>A}</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>requestDataSource</name>
+         <value>text</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>requestReports</name>
+         <value>false</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>resource</name>
+         <value>api/now/&amp;UC4RB_SN_API_VER#cmdb/instance/&amp;UC4RB_SN_CLASS_NAME#/&amp;UC4RB_SN_SYS_ID#/relation</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>response_part_0_file</name>
+         <value>api/now/&amp;UC4RB_SN_API_VER#cmdb/instance/&amp;UC4RB_SN_CLASS_NAME#/&amp;UC4RB_SN_SYS_ID#/relation</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>responseReport</name>
+         <value>false</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>responseTimeout</name>
+         <value>60</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>responseToJobLog</name>
+         <value>true</value>
+      </row>
+      <row>
+         <is_connection>1</is_connection>
+         <type>2</type>
+         <name>restConnection</name>
+         <value>true</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>tracePerformance</name>
+         <value>false</value>
+      </row>
+      <row>
+         <type>2</type>
+         <name>uriOverride</name>
+         <value>false</value>
+      </row>
+   </extended_values>
+   <prompt_set_list>
+      <row>
+         <line_number>1</line_number>
+         <prompt_set>PCK.AUTOMIC_SERVICENOW.PUB.PROMPTSET.CONNECTION_DETAILS</prompt_set>
+         <display_order>1</display_order>
+      </row>
+      <row>
+         <line_number>2</line_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <display_order>2</display_order>
+      </row>
+      <row>
+         <line_number>3</line_number>
+         <prompt_set>PCK.AUTOMIC_SERVICENOW.PRV.PROMPTSET.ADD_CI_RELATION</prompt_set>
+         <display_order>3</display_order>
+      </row>
+      <row>
+         <line_number>4</line_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <display_order>4</display_order>
+      </row>
+      <row>
+         <line_number>5</line_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_ADVANCED</prompt_set>
+         <display_order>5</display_order>
+      </row>
+      <row>
+         <line_number>6</line_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.OVERWRITE_RA_AGENT</prompt_set>
+         <display_order>6</display_order>
+      </row>
+   </prompt_set_list>
+   <prompt_set_defaults>
+      <row>
+         <prompt_set_element_number>1</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_SERVICENOW.PUB.PROMPTSET.CONNECTION_DETAILS</prompt_set>
+         <variable_name>UC4RB_SN_REST_END_POINT#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>2</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <variable_name>CONN_AUTH_BASIC_USERNAME#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>2</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <value>--10</value>
+         <variable_name>CONN_AUTH_BASIC_PASSWORD#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>2</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <variable_name>CONN_AUTH_BASIC_HOST#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>2</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <value>0</value>
+         <variable_name>CONN_AUTH_BASIC_PORT#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>2</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <variable_name>CONN_AUTH_BASIC_REALM#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>2</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_AUTH_BASIC</prompt_set>
+         <value>YES</value>
+         <variable_name>CONN_AUTH_BASIC_PREEMPTIVE#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>3</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_SERVICENOW.PRV.PROMPTSET.ADD_CI_RELATION</prompt_set>
+         <variable_name>UC4RB_SN_CLASS_NAME#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>3</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_SERVICENOW.PRV.PROMPTSET.ADD_CI_RELATION</prompt_set>
+         <variable_name>UC4RB_SN_SYS_ID#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>3</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_SERVICENOW.PRV.PROMPTSET.ADD_CI_RELATION</prompt_set>
+         <variable_name>UC4RB_SN_CMDB_INBOUND_REL#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>3</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_SERVICENOW.PRV.PROMPTSET.ADD_CI_RELATION</prompt_set>
+         <variable_name>UC4RB_SN_CMDB_OUTBOUND_REL#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <value>None</value>
+         <variable_name>CONN_PROXY_TYPE#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <variable_name>CONN_PROXY_HOST#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <value>0</value>
+         <variable_name>CONN_PROXY_PORT#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <variable_name>CONN_PROXY_USERNAME#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <value>--10</value>
+         <variable_name>CONN_PROXY_PASSWORD#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <variable_name>CONN_PROXY_REALM#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>4</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_PROXY</prompt_set>
+         <value>None</value>
+         <variable_name>CONN_PROXY_AUTH_METHOD#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>5</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_ADVANCED</prompt_set>
+         <value>30</value>
+         <variable_name>CONN_CONNECTION_TIMEOUT#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>5</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_ADVANCED</prompt_set>
+         <value>60</value>
+         <variable_name>CONN_READ_TIMEOUT#</variable_name>
+      </row>
+      <row>
+         <prompt_set_element_number>5</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.CONNECTION_ADVANCED</prompt_set>
+         <value>NO</value>
+         <variable_name>CONN_FOLLOW_REDIRECTS#</variable_name>
+      </row>
+      <row>
+         <alternative_view>1</alternative_view>
+         <prompt_set_element_number>6</prompt_set_element_number>
+         <prompt_set>PCK.AUTOMIC_RA_REST.PUB.PROMPTSET.OVERWRITE_RA_AGENT</prompt_set>
+         <value>&amp;OVERWRITE_RA_AGENT_PROMPT#</value>
+         <variable_name>OVERWRITE_RA_AGENT_PROMPT#</variable_name>
+      </row>
+   </prompt_set_defaults>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

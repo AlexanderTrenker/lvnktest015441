@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>F</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>UNIX</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_JAVA.PRV.JOB.START_JVM_APPLICATION@UNIX</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <description>Start JVM App</description>
+         <versioning_id>1815976398</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[: DEFINE &STRING_ARR#, string, 30
+: INC PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+: INC PCK.ITPA_SHARED.PUB.INCLUDE.SUDOERS_HEADER
+
+: INC PCK.ITPA_SHARED.PRV.INCLUDE.LOGGING.HEADER.EXECUTION
+: INC PCK.AUTOMIC_JAVA.PRV.INCLUDE.START_JVM_APPLICATION_LOGGING_PARAMS
+
+: ATTACH_RES "PCK.AUTOMIC_JAVA.PRV.STORE", "START-APP-UNIX", T, N
+: SET &UC4RB_SH_SCR_NAME# = "start-jvm-app-unix.sh"
+
+: SWITCH &UC4RB_AIOPS_TOOLS#
+: CASE "WinRM"
+:    STOP MSG, 50, "WinRM is only supported by Windows Platforms."
+: CASE "SSH"
+!   Create 2 files for Unix and windows commands. then use based on os..
+:   SET &APP_PATH# = "&UC4RB_AIOPS_APP_LOCATION#/&UC4RB_AIOPS_JVM_APP_NAME#"
+:   INC PCK.ITPA_SHARED.PRV.INCLUDE.ESCAPE_CHARS@UNIX &UC4RB_ESCAPED_STRING# = &APP_PATH#
+:   SET &ADV_OPTS# = &UC4RB_AIOPS_ADVANCED_OPTIONS#
+:   INC PCK.ITPA_SHARED.PRV.INCLUDE.ESCAPE_CHARS@UNIX &UC4RB_ESCAPED_STRING# = &ADV_OPTS#
+:   SET &JAVA_BIN# = &UC4RB_AIOPS_JAVA_BIN_DIR#
+:   INC PCK.ITPA_SHARED.PRV.INCLUDE.ESCAPE_CHARS@UNIX &UC4RB_ESCAPED_STRING# = &JAVA_BIN#
+:   SET &UC4RB_FILE_CONTENT# = 'sed -i ''s/\r$//'' ./&$RUNID#/&UC4RB_SH_SCR_NAME#;bash ./&$RUNID#/&UC4RB_SH_SCR_NAME# "&APP_PATH#" "&ADV_OPTS#" "&JAVA_BIN#"'
+:   P "INFO: UNIX Script: &UC4RB_FILE_CONTENT#"
+:   SET &TEMP_UNIX#="&$AGENT_RESOURCES_TASK#cmd_unix.txt"
+:   SET &UC4RB_FILE_PATH# = &TEMP_UNIX#
+:   INC PCK.AUTOMIC_JAVA.PUB.INCLUDE.WRITE_FILE
+
+:   ATTACH_RES "PCK.AUTOMIC_JAVA.PRV.STORE", "START-APP-WIN", T, N
+:   SET &UC4RB_PS_SCR_NAME# = "start-jvm-app-win.ps1"
+:   SET &APP_PATH# = "&UC4RB_AIOPS_APP_LOCATION#\&UC4RB_AIOPS_JVM_APP_NAME#"
+:   INC PCK.ITPA_SHARED.PRV.INCLUDE.ESCAPE_SSH_ARGS@WINDOWS &UC4RB_ESCAPED_STRING# = &APP_PATH#
+:   SET &ADV_OPTS# = &UC4RB_AIOPS_ADVANCED_OPTIONS#
+:   INC PCK.ITPA_SHARED.PRV.INCLUDE.ESCAPE_SSH_ARGS@WINDOWS &UC4RB_ESCAPED_STRING# = &ADV_OPTS#
+:   SET &JAVA_BIN# = &UC4RB_AIOPS_JAVA_BIN_DIR#
+:   INC PCK.ITPA_SHARED.PRV.INCLUDE.ESCAPE_SSH_ARGS@WINDOWS &UC4RB_ESCAPED_STRING# = &JAVA_BIN#
+:   SET &UC4RB_FILE_CONTENT# = 'powershell .\&$RUNID#\&UC4RB_PS_SCR_NAME# "\"&APP_PATH#\"" "\"&ADV_OPTS#\"" "\"&JAVA_BIN#\""'
+:   P "INFO: Windows Script: &UC4RB_FILE_CONTENT#"
+:   SET &TEMP_WIN#="&$AGENT_RESOURCES_TASK#cmd_win.txt"
+:   SET &UC4RB_FILE_PATH# = &TEMP_WIN#
+:   INC PCK.AUTOMIC_JAVA.PUB.INCLUDE.WRITE_FILE
+
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH_SSH_RESOURCE
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.SSH_PREPARE_ARGS
+
+:   INC PCK.ITPA_SHARED.PUB.INCLUDE.SSH_DETECT_OSNAME
+    if [ "$UC4RB_SSH_OSNAME" == "WINDOWS" ] ;
+      then
+        cmdFile='&TEMP_WIN#'
+        java -jar "&UC4RB_SSH_JARPATH#" -action RunScriptAction &UC4RB_SSH_WIN_ARGS# -cmdfile "$cmdFile" -sourcepath " &$AGENT_RESOURCES_TASK# "
+    else
+        cmdFile='&TEMP_UNIX#'
+        java -jar "&UC4RB_SSH_JARPATH#" -action RunScriptAction &UC4RB_SSH_ARGS# -cmdfile "$cmdFile" -sourcepath " &$AGENT_RESOURCES_TASK# "
+    fi
+: CASE "Agent"
+:   SET &APP_PATH# = "&UC4RB_AIOPS_APP_LOCATION#/&UC4RB_AIOPS_JVM_APP_NAME#"
+:   INC PCK.ITPA_SHARED.PRV.INCLUDE.ESCAPE_CHARS@UNIX &UC4RB_ESCAPED_STRING# = &APP_PATH#
+:   SET &ADV_OPTS# = &UC4RB_AIOPS_ADVANCED_OPTIONS#
+:   INC PCK.ITPA_SHARED.PRV.INCLUDE.ESCAPE_CHARS@UNIX &UC4RB_ESCAPED_STRING# = &ADV_OPTS#
+:   SET &JAVA_BIN# = &UC4RB_AIOPS_JAVA_BIN_DIR#
+:   INC PCK.ITPA_SHARED.PRV.INCLUDE.ESCAPE_CHARS@UNIX &UC4RB_ESCAPED_STRING# = &JAVA_BIN#
+    "&$AGENT_RESOURCES_TASK#&UC4RB_SH_SCR_NAME#" "&APP_PATH#" "&ADV_OPTS#" "&JAVA_BIN#"
+: ENDSWITCH
+: INC PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_SHELL_CMD@UNIX
+: INC PCK.ITPA_SHARED.PUB.INCLUDE.SUDOERS_FOOTER]]></process>
+      </row>
+      <row>
+         <pre_process>:INC PCK.ITPA_SHARED.PUB.INCLUDE.START_STOP_JOB_ACCORDING_TO_AGENT_OS</pre_process>
+      </row>
+      <row>
+         <post_process>:INC PCK.AUTOMIC_JAVA.PUB.INCLUDE.PUBLISH_PROCESS_ID</post_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <platform>UNIX</platform>
+         <agent><![CDATA[<UNIX>]]></agent>
+         <job_report_path>2</job_report_path>
+         <priority>0</priority>
+         <unix_shell>-bash</unix_shell>
+         <unix_shell_options></unix_shell_options>
+         <unix_type></unix_type>
+         <unix_cmd></unix_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

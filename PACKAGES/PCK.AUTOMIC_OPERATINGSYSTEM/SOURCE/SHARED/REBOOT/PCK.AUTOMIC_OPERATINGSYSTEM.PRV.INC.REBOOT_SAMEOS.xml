@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobi>
+   <metadata>
+      <row>
+         <version>21.0.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>PCK.AUTOMIC_OPERATINGSYSTEM.PRV.INC.REBOOT_SAMEOS</name>
+         <type>JOBI</type>
+         <description>Reboot post processing for same type of OS</description>
+         <versioning_id>-1436023386</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:  SET &STARTED# = "FALSE"
+:  SET &FAILED# = "FALSE"
+:  SET &HND#=PREP_PROCESS_REPORT("JOBS", , "REP","UC4RB_*","COL=DELIMITER", 'DELIMITER=*::=*')
+:  PROCESS &HND#
+:    SET &KEY# = GET_PROCESS_LINE(&HND#,1)
+:    SET &VALUE# = GET_PROCESS_LINE(&HND#,2)
+:    IF &KEY# = "UC4RB_REBOOT_STARTED"
+:      SET &STARTED# = "TRUE"
+:    ELSE
+:      IF &KEY# = "UC4RB_REBOOT_FAILED"
+:        SET &FAILED# = "TRUE"
+:      ELSE
+:        IF &KEY# = "UC4RB_SSH_COMMAND_EXITCODE"
+:          SET &VALUE# = STR_TRIM(&VALUE#)
+:          IF &VALUE# <> "0" OR "-1"
+:             SET &FAILED# = "TRUE"
+:          ENDIF
+:        ENDIF
+:      ENDIF
+:    ENDIF
+:  ENDPROCESS
+:  CLOSE_PROCESS &HND#
+
+:  SET &REBOOT_STATUS# = "PASS"
+:  IF "FALSE" EQ &STARTED#
+:    SET &REBOOT_STATUS# = "FAIL"
+:  ELSE
+:    IF &FAILED# = "TRUE"
+:      SET &REBOOT_STATUS# = "FAIL"
+:    ENDIF
+:  ENDIF
+
+:  IF &REBOOT_STATUS# EQ "FAIL"
+:    MODIFY_STATE STATUS_TEXT="Reboot Failed."
+:    MODIFY_STATE RETCODE=50
+:    IF &UC4RB_AIOPS_WAIT_FOR_COMPLETE# EQ "YES"
+:      PUT_VAR PCK.AUTOMIC_OPERATINGSYSTEM.PUB.VARA.STATUS_FLAG, "&$PROCESSOR_RUNID#", "STOP"
+:      IF &UC4RB_AIOPS_TOOLS# <> "Agent"
+:        IF &UC4RB_AIOPS_FORCE# EQ "YES"
+:          SET &AGENT_TEMPDIR# = GET_VAR('UC_EX_PATH_TEMP', &AGENT#)
+:          SET &UC4RB_FILE_CONTENT# = "STOP"
+:          SET &UC4RB_FILE_PATH#="&AGENT_TEMPDIR#&STATUS_TEMPFILE#"
+:          INC PCK.AUTOMIC_OPERATINGSYSTEM.PUB.INCLUDE.WRITE_FILE
+:        ENDIF
+:      ENDIF
+:    ENDIF
+:  ELSE
+:    MODIFY_STATE STATUS_TEXT="Reboot issued."
+:    MODIFY_STATE RETCODE=0
+:  ENDIF
+: PUBLISH &REBOOT_STATUS#,,WORKFLOW]]></process>
+      </row>
+   </scripts>
+</jobi>
